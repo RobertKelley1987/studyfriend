@@ -14,7 +14,7 @@ module.exports.create = catchAsync(async (req, res) => {
     const { userId, categoryId } = req.params;
     
     // Create flashcard
-    const newCard = await Flashcard.create({ question: question, answer: answer });
+    const newCard = await Flashcard.create({ question: question, answer: answer, category: categoryId });
     if(!newCard) {
         throw new ExpressError(500, 'CREATE_FLASHCARD_ERR', 'Failed to create new flashcard.');
     }
