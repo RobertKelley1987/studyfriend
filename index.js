@@ -3,41 +3,30 @@ if(process.env.NODE_ENV !== 'production') {
 }
 
 // ENV VARS
-const PORT = process.env.PORT || 800;
+const PORT = process.env.PORT || 8080;
 const DB_URL = process.env.DB_URL || 'mongodb://127.0.0.1:27017/flashcards';
 
 // INIT REQUIRED PACKAGES
 const express = require('express');
 const app = express();
-const cors = require('cors');
 const mongoose = require('mongoose');
 const errorHandler = require('./handle-errors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const dbUrl = DB_URL; 
-const corsOrigin = 'https://studyfriend.netlify.app';
 
 // CONNECT TO DB
-mongoose.connect(dbUrl);
+mongoose.connect(DB_URL);
 
 // CONFIG APP - GENERAL
-// app.set('trust proxy', 1);
 app.use(express.static('build'));
 app.use(express.json());
-app.use(cors({ origin: corsOrigin, credentials: true }));
 
 // CONFIG SESSIONS
 app.use(session({
     secret: process.env.SECRET,
     saveUninitialized: false,
     resave: false,
-    cookie: {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 12 * 60 * 60
-    },
-    store: MongoStore.create({ mongoUrl: dbUrl })
+    store: MongoStore.create({ mongoUrl: DB_URL })
 }));
 
 // CONFIG APP - ROUTES
