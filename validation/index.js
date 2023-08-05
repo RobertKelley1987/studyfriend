@@ -12,9 +12,8 @@ module.exports.validateEditedCategory = (req, res, next) => validateCategory(req
 
 function validateFlashcard (req, next, errName) {
     const { question, answer } = req.body;
-    const { categoryId } = req.params;
 
-    const { error } = flashcardSchema.validate({ question, answer, category: categoryId });
+    const { error } = flashcardSchema.validate({ question, answer });
     if(error) {
         const messages = error.details.map(err => err.message);
         throw new ExpressError(400, errName, messages);
