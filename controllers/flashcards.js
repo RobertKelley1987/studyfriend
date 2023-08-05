@@ -61,8 +61,8 @@ module.exports.resetAllCompleted = catchAsync(async (req, res) => {
 });
 
 module.exports.updateOne = catchAsync(async (req, res) => {
-    const { userId, categoryId, flashcardId } = req.params;
-    const { question, answer, category } = req.body;
+    const { userId, flashcardId } = req.params;
+    const { question, answer } = req.body;
 
     // Find flashcard
     const foundFlashcard = await findFlashcard(flashcardId);
@@ -71,19 +71,6 @@ module.exports.updateOne = catchAsync(async (req, res) => {
     foundFlashcard.question = question;
     foundFlashcard.answer = answer;
     await foundFlashcard.save();
-
-    // If different category is provided, move flashcard to its new category
-    if(categoryId !== category) {
-        // Get current category and new category
-        const currentCategory = await findCategory(categoryId);
-        const newCategory = await findCategory(category);
-
-        // Remove from current category and add to new category
-        await currentCategory.flashcards.pull(flashcardId);
-        await currentCategory.save();
-        await newCategory.flashcards.push(foundFlashcard);
-        await newCategory.save();
-    }
 
     // Return categories to client
     returnCategories(res, userId);

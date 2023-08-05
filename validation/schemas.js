@@ -17,9 +17,7 @@ exports.flashcardSchema = Joi.object({
     question: Joi.string().pattern(/\S+$/, 'allWhitespace').required()
               .error(errs => errs.map(err => questionMessages(err))),
     answer: Joi.string().pattern(/\S+$/, 'allWhitespace').required()
-            .error(errs => errs.map(err => answerMessages(err))),
-    category: Joi.string().pattern(/\S+$/, 'allWhitespace').required()
-              .error(errs => errs.map(err => categoryIdMessages(err))),
+            .error(errs => errs.map(err => answerMessages(err)))
 }).required();
 
 exports.categorySchema = Joi.object({

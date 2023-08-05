@@ -10,9 +10,9 @@ const DB_URL = process.env.DB_URL || 'mongodb://127.0.0.1:27017/flashcards';
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const sessionConfig = require('./session-config');
 const errorHandler = require('./handle-errors');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const path = require('path');
 
 // CONNECT TO DB
 mongoose.connect(DB_URL);
@@ -20,14 +20,7 @@ mongoose.connect(DB_URL);
 // CONFIG APP - GENERAL
 app.use(express.static('build'));
 app.use(express.json());
-
-// CONFIG SESSIONS
-app.use(session({
-    secret: process.env.SECRET,
-    saveUninitialized: false,
-    resave: false,
-    store: MongoStore.create({ mongoUrl: DB_URL })
-}));
+app.use(sessionConfig(DB_URL));
 
 // CONFIG APP - ROUTES
 const categoryRoutes = require('./routes/categories');
@@ -37,10 +30,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/users/:userId/categories', categoryRoutes);
 app.use('/api/users/:userId/categories/:categoryId/flashcards', flashcardRoutes);
 
-// TEST ROUTE FOR CLIENT
+// TEST ROUTE FOR API
 app.get('/api/test', (req, res) => res.send({ successMessage: 'OK' }));
+// SEND REACT BUILD FOR ALL NON-API REQUESTS
+app.get('/*', (req, res) => res.sendFile(path.join(__dirname, 'build', 'index.html')));
 
-// ERROR HANDLING
+// ADD ERROR HANDLING
 app.use(errorHandler);
 
 // START APP ON DB CONNECTION
