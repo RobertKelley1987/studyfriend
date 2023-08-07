@@ -6,6 +6,10 @@ const flashcardSchema = mongoose.Schema({
     completed: {
         type: Boolean,
         default: false
+    },
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category'
     }
 });
 

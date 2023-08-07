@@ -1,7 +1,7 @@
 const Flashcard = require('../models/Flashcard');
 const ExpressError = require('../util/express-error');
 const catchAsync = require('../util/catch-async');
-const { returnCategories, findCategory, findFlashcard } = require('./helpers');
+const { findUser, findCategory, findFlashcard } = require('./helpers');
 
 module.exports.getOne = catchAsync(async (req, res) => {
     const { flashcardId } = req.params;
@@ -11,7 +11,7 @@ module.exports.getOne = catchAsync(async (req, res) => {
 
 module.exports.create = catchAsync(async (req, res) => {
     const { question, answer } = req.body; 
-    const { userId, categoryId } = req.params;
+    const { categoryId } = req.params;
     
     // Create flashcard
     const newCard = await Flashcard.create({ question: question, answer: answer, category: categoryId });
@@ -19,17 +19,13 @@ module.exports.create = catchAsync(async (req, res) => {
         throw new ExpressError(500, 'CREATE_FLASHCARD_ERR', 'Failed to create new flashcard.');
     }
 
-    // Push new card to category
-    const foundCategory = await findCategory(categoryId);
-    foundCategory.flashcards.push(newCard);
-    await foundCategory.save();
-
-    // Return categories to client
-    returnCategories(res, userId);
+    // Return category with flashcards to client
+    const category = await findCategory(categoryId);
+    res.status(200).send({ category });
 });
 
 module.exports.updateCompleted = catchAsync(async (req, res) => {
-    const { userId, flashcardId } = req.params;
+    const { categoryId, flashcardId } = req.params;
 
     // Find flashcard
     const foundFlashcard = await findFlashcard(flashcardId);
@@ -38,30 +34,24 @@ module.exports.updateCompleted = catchAsync(async (req, res) => {
     foundFlashcard.completed = !foundFlashcard.completed;
     await foundFlashcard.save();
 
-    // Return categories to client
-    returnCategories(res, userId);
+    // Return updated category with flashcards
+    const foundCategory = await findCategory(categoryId);
+    res.status(200).send({ category: foundCategory });
 });
 
 module.exports.resetAllCompleted = catchAsync(async (req, res) => {
-    const { userId, categoryId } = req.params;
+    const { categoryId } = req.params;
 
-    // Find category
+    // Find category and update
+    await Flashcard.updateMany({ category: categoryId }, { completed: false });
+    
+    // Return updated category with flashcards
     const foundCategory = await findCategory(categoryId);
-
-    // Update all flashcards in category and save
-    foundCategory.flashcards.forEach(async flashcard => {
-        flashcard.completed = false;
-        await flashcard.save();
-    });
-
-    await foundCategory.save();
-
-    // Return categories to client
-    returnCategories(res, userId);
+    res.status(200).send({ category: foundCategory });
 });
 
 module.exports.updateOne = catchAsync(async (req, res) => {
-    const { userId, flashcardId } = req.params;
+    const { categoryId, flashcardId } = req.params;
     const { question, answer } = req.body;
 
     // Find flashcard
@@ -72,21 +62,22 @@ module.exports.updateOne = catchAsync(async (req, res) => {
     foundFlashcard.answer = answer;
     await foundFlashcard.save();
 
-    // Return categories to client
-    returnCategories(res, userId);
+    // Return updated category with flashcards
+    const foundCategory = await findCategory(categoryId);
+    res.status(200).send({ category: foundCategory });
 });
 
 module.exports.deleteOne = catchAsync(async (req, res) => {
-    const { userId, flashcardId } = req.params;
-    const errName = 'DELETE_FLASHCARD_ERR';
+    const { categoryId, flashcardId } = req.params;
 
     // Delete flashcard from db
     const { deletedCount } = await Flashcard.deleteOne({_id: flashcardId });
     if(deletedCount < 1) {
-        throw new ExpressError(500, errName, 'Failed to delete this item from the database.')
+        throw new ExpressError(500, 'DELETE_FLASHCARD_ERR', 'Failed to delete this item from the database.')
     }
 
-    // Return categories to client
-    returnCategories(res, userId);
+    // Return updated category with flashcards
+    const foundCategory = await findCategory(categoryId);
+    res.status(200).send({ category: foundCategory });
 });
 

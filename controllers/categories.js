@@ -2,7 +2,7 @@ const Category = require('../models/Category');
 const User = require('../models/User');
 const ExpressError = require('../util/express-error');
 const catchAsync = require('../util/catch-async');
-const { returnCategories, findCategory } = require('./helpers');
+const { findUser, findCategory } = require('./helpers');
 
 module.exports.getOne = catchAsync(async(req, res) => {
     const{ categoryId } = req.params;
@@ -12,7 +12,8 @@ module.exports.getOne = catchAsync(async(req, res) => {
 
 module.exports.getAll = catchAsync(async (req, res) => {
     const { userId } = req.params;
-    returnCategories(res, userId);
+    const foundUser = await findUser(userId);
+    res.status(200).send({ categories: foundUser.categories });
 });
 
 module.exports.create = catchAsync(async (req, res) => {
@@ -25,14 +26,12 @@ module.exports.create = catchAsync(async (req, res) => {
     }
 
     // Add to user's array of categories
-    const foundUser = await User.findById(userId).populate(
-        { path: 'categories', populate: { path: 'flashcards'} }
-    );
+    const foundUser = await User.findById(userId).populate('categories');
     foundUser.categories.push(newCategory);
     await foundUser.save();
 
-    // Return updated categories to client
-    returnCategories(res, userId);
+    // Return updated categories
+    res.status(200).send({ categories: foundUser.categories });
 });
 
 module.exports.updateOne = catchAsync(async (req, res) => {
@@ -40,12 +39,16 @@ module.exports.updateOne = catchAsync(async (req, res) => {
     const { name } = req.body;
 
     // Find category and update
-    const foundCategory = await findCategory(categoryId);
+    const foundCategory = await Category.findById(categoryId);
+    if(!foundCategory) {
+        throw new ExpressError(400, 'GET_CATEGORY_ERR', 'Failed to locate category with that id.');
+    }
     foundCategory.name = name;
     await foundCategory.save();
 
-    // Return updated categories to client
-    returnCategories(res, userId);
+    // Return updated categories
+    const foundUser = await findUser(userId);
+    res.status(200).send({ categories: foundUser.categories });
 });
 
 module.exports.deleteOne = catchAsync(async (req, res) => {
@@ -57,5 +60,7 @@ module.exports.deleteOne = catchAsync(async (req, res) => {
         throw new ExpressError(500, 'DELETE_CATEGORY_ERR', 'Failed to delete this item from the database.');
     }
 
-    returnCategories(res, userId);
+    // Return updated categories
+    const foundUser = await findUser(userId);
+    res.status(200).send({ categories: foundUser.categories });
 });
