@@ -14,16 +14,25 @@ module.exports.findFlashcard = async id => {
     return flashcard;
 }
 
+module.exports.findCategoryFlashcards = async categoryId => {
+    const completed = await Flashcard.find({ category: categoryId, completed: true });
+    const notCompleted = await Flashcard.find({ category: categoryId, completed: false });
+
+    if(!completed || ! notCompleted) {
+        throw new ExpressError(400, 'GET_FLASHCARDS_ERR', 'Failed to locate flashcards for this category.')
+    }
+
+    return { completed, notCompleted }
+}
+
 // Fetch and validate a category
 module.exports.findCategory = async id => {
     const { name } = await Category.findById(id);
     if(!name) {
         throw new ExpressError(400, 'GET_CATEGORY_ERR', 'Failed to locate category with that id.');
     }
-    const completed = await Flashcard.find({ category: id, completed: true });
-    const notCompleted = await Flashcard.find({ category: id, completed: false });
 
-    return { name, flashcards: { completed, notCompleted }};
+    return { name };
 }
 
 // Fetch a validated fully populated user

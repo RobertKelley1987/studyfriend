@@ -6,6 +6,7 @@ const { isLoggedIn } = require('../middleware');
 router.use(isLoggedIn);
 
 router.route('/')
+    .get(flashcards.getAll)
     .post(flashcards.create)
     .put(flashcards.resetAllCompleted);
 
